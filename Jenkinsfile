@@ -35,16 +35,27 @@ pipeline {
           timestamps {
             ansiColor('xterm') {
               deployer.inside {
-                gds_app = params.cf_app.split("/")
-                withCredentials([usernamePassword(credentialsId: env.GDS_PAAS_CREDENTIAL, passwordVariable: 'gds_pass', usernameVariable: 'gds_user')]) {
+                withCredentials([string(credentialsId: env.GDS_PAAS_CONFIG, variable: 'paas_config_raw')]) {
+                  paas_config = readJSON text: paas_config_raw
+                }
+                if (!config.PAAS_REGION) {
+                  config.PAAS_REGION = paas_config.default
+                }
+                paas_region = paas_config.regions."${config.PAAS_REGION}"
+                echo "\u001B[32mINFO: Setting PaaS region to ${paas_region.name}.\u001B[m"
+
+                withCredentials([usernamePassword(credentialsId: paas_region.credential, passwordVariable: 'gds_pass', usernameVariable: 'gds_user')]) {
                   sh """
-                    cf login -a ${env.GDS_PAAS} -u ${gds_user} -p ${gds_pass} -o ${gds_app[0]} -s ${gds_app[1]}
-                    cf target -o ${gds_app[0]} -s ${gds_app[1]}
-                  """
-                  sh """
-                    cf run-task ${gds_app[2]} '${env.task_cmd}' --name ${task_name} -k ${env.task_disk} -m ${env.task_disk}
+                    cf api ${paas_region.api}
+                    cf auth ${gds_user} ${gds_pass}
                   """
                 }
+
+                gds_app = params.cf_app.split("/")
+                sh "cf target -o ${gds_app[0]} -s ${gds_app[1]}"
+                sh """
+                  cf run-task ${gds_app[2]} '${env.task_cmd}' --name ${task_name} -k ${env.task_disk} -m ${env.task_disk}
+                """
               }
             }
           }
