@@ -30,12 +30,6 @@ pipeline {
             deployer.inside {
               checkout([$class: 'GitSCM', branches: [[name: env.GIT_BRANCH]], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'SubmoduleOption', disableSubmodules: false, parentCredentials: true, recursiveSubmodules: true, reference: '', trackingSubmodules: false]], submoduleCfg: [], userRemoteConfigs: [[credentialsId: env.SCM_CREDENTIAL, url: env.PIPELINE_SCM]]])
               checkout([$class: 'GitSCM', branches: [[name: env.GIT_BRANCH]], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'SubmoduleOption', disableSubmodules: false, parentCredentials: true, recursiveSubmodules: true, reference: '', trackingSubmodules: false], [$class: 'RelativeTargetDirectory', relativeTargetDir: 'config']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: env.SCM_CREDENTIAL, url: env.PIPELINE_CONF_SCM]]])
-              withCredentials([string(credentialsId: env.VAULT_TOKEN_ID, variable: 'TOKEN')]) {
-                env.VAULT_SERECT_ID = TOKEN
-                sh "${env.WORKSPACE}/bootstrap.rb ${env.Team} ${env.Project} ${env.Environment}"
-              }
-              envars = readJSON file: "${env.WORKSPACE}/.ci/env.json"
-              config = readJSON file: "${env.WORKSPACE}/.ci/config.json"
             }
           }
         }
@@ -47,6 +41,14 @@ pipeline {
         script {
           ansiColor('xterm') {
             deployer.inside {
+              gds_app = params.cf_app.split("/")
+              withCredentials([string(credentialsId: env.VAULT_TOKEN_ID, variable: 'TOKEN')]) {
+                env.VAULT_SERECT_ID = TOKEN
+                sh "${env.WORKSPACE}/bootstrap.rb ${env.Team} ${env.Project} ${env.Environment}"
+              }
+              envars = readJSON file: "${env.WORKSPACE}/.ci/env.json"
+              config = readJSON file: "${env.WORKSPACE}/.ci/config.json"
+
               withCredentials([string(credentialsId: env.GDS_PAAS_CONFIG, variable: 'paas_config_raw')]) {
                 paas_config = readJSON text: paas_config_raw
               }
@@ -63,7 +65,6 @@ pipeline {
                 """
               }
 
-              gds_app = params.cf_app.split("/")
               sh "cf target -o ${gds_app[0]} -s ${gds_app[1]}"
               sh """
                 cf run-task ${gds_app[2]} '${env.task_cmd}' --name ${task_name} -k ${env.task_disk} -m ${env.task_disk}
