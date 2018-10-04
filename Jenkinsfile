@@ -42,9 +42,9 @@ pipeline {
                 paas_config = readJSON text: paas_config_raw
               }
               if (!params.cf_region) {
-                params.cf_region = paas_config.default
+                cf_region = paas_config.default
               }
-              paas_region = paas_config.regions."${params.cf_region}"
+              paas_region = paas_config.regions."${cf_region}"
               echo "\u001B[32mINFO: Setting PaaS region to ${paas_region.name}.\u001B[m"
 
               withCredentials([usernamePassword(credentialsId: paas_region.credential, passwordVariable: 'gds_pass', usernameVariable: 'gds_user')]) {
