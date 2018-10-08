@@ -57,7 +57,7 @@ pipeline {
               gds_app = params.cf_app.split("/")
               sh "cf target -o ${gds_app[0]} -s ${gds_app[1]}"
               sh """
-                cf run-task ${gds_app[2]} '${params.task_cmd}' --name ${params.task_name} -k ${params.task_disk} -m ${params.task_disk}
+                cf run-task ${gds_app[2]} '${params.task_cmd}' --name ${params.task_name} -k ${params.task_disk} -m ${params.task_mem}
               """
             }
           }
