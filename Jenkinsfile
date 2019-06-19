@@ -27,6 +27,7 @@ pipeline {
         script {
           validateDeclarativePipeline("${env.WORKSPACE}/Jenkinsfile")
           deployer = docker.image("quay.io/uktrade/deployer:${env.GIT_BRANCH.split("/")[1]}")
+          docker_args = "--network host"
           deployer.pull()
         }
       }
@@ -35,7 +36,7 @@ pipeline {
     stage('Task') {
       steps {
         script {
-          deployer.inside {
+          deployer.inside(docker_args) {
             withCredentials([string(credentialsId: env.GDS_PAAS_CONFIG, variable: 'paas_config_raw')]) {
               paas_config = readJSON text: paas_config_raw
             }
