@@ -13,7 +13,7 @@ pipeline {
 
   parameters {
     string(defaultValue: '', description:'Please enter app: ', name: 'cf_app')
-    string(defaultValue: 'eu-west-1', description:'Please enter region: ', name: 'cf_region')
+    string(defaultValue: 'eu-west-2', description:'Please enter region: ', name: 'cf_region')
     string(defaultValue: '', description:'Please enter task name: ', name: 'task_name')
     string(defaultValue: '', description:'Please enter task command: ', name: 'task_cmd')
     string(defaultValue: '1024M', description:'Please enter task mem: ', name: 'task_mem')
